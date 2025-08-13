@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration Results</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-green-50 to-emerald-100 min-h-screen py-8">
+    <div class="max-w-4xl mx-auto px-4">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
+                <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">Configuration Successful!</h1>
+            <p class="text-gray-600 text-lg">Your Instagram messaging automation is ready to launch</p>
+        </div>
+
+        <!-- Success/Error Messages -->
+        {% if success_message %}
+        <div class="mb-8 bg-green-50 border-l-4 border-green-400 p-6 rounded-r-lg">
+            <div class="flex items-start">
+                <svg class="h-6 w-6 text-green-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <div class="ml-3">
+                    <h3 class="text-lg font-semibold text-green-800">Campaign Completed Successfully!</h3>
+                    <p class="mt-2 text-green-700">{{ success_message }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div class="mb-8 bg-red-50 border-l-4 border-red-400 p-6 rounded-r-lg">
+            <div class="flex items-start">
+                <svg class="h-6 w-6 text-red-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                </svg>
+                <div class="ml-3">
+                    <h3 class="text-lg font-semibold text-red-800">Campaign Error</h3>
+                    <p class="mt-2 text-red-700">{{ error }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="grid md:grid-cols-2 gap-8">
+            <!-- Configuration Summary -->
+            <div class="bg-white rounded-2xl shadow-xl p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <svg class="w-6 h-6 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2V9a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    Configuration Summary
+                </h2>
+                
+                <div class="space-y-4">
+                    {% if username %}
+                    <div class="border-b pb-3">
+                        <label class="text-sm font-semibold text-gray-600">Instagram Account</label>
+                        <p class="text-gray-800 font-medium">@{{ username }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if niche %}
+                    <div class="border-b pb-3">
+                        <label class="text-sm font-semibold text-gray-600">Target Niche</label>
+                        <p class="text-gray-800 font-medium">{{ niche.title() }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if message_count %}
+                    <div class="border-b pb-3">
+                        <label class="text-sm font-semibold text-gray-600">Messages to Send</label>
+                        <p class="text-gray-800 font-medium">{{ message_count }} messages</p>
+                        {% if message_count >= 7 %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 mt-1">
+                            High Risk
+                        </span>
+                        {% elif message_count >= 5 %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 mt-1">
+                            Medium Risk
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mt-1">
+                            Safe Range
+                        </span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="border-b pb-3">
+                        <label class="text-sm font-semibold text-gray-600">Timing Interval</label>
+                        <p class="text-gray-800 font-medium">2 seconds between messages</p>
+                    </div>
+                    
+                    {% if message_content %}
+                    <div>
+                        <label class="text-sm font-semibold text-gray-600">Message Preview</label>
+                        <div class="mt-2 p-3 bg-gray-50 rounded-lg border-l-4 border-blue-400">
+                            <p class="text-gray-700 text-sm">"{{ message_content[:100] }}{% if message_content|length > 100 %}...{% endif %}"</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Next Steps -->
+            <div class="bg-white rounded-2xl shadow-xl p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <svg class="w-6 h-6 text-purple-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                    Next Steps
+                </h2>
+                
+                <div class="space-y-6">
+                    <div class="flex items-start space-x-4">
+                        <div class="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span class="text-blue-600 font-semibold text-sm">1</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800">Campaign Launch</h3>
+                            <p class="text-gray-600 text-sm">Click "Start Running" to begin the automation</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start space-x-4">
+                        <div class="flex-shrink-0 w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                            <span class="text-yellow-600 font-semibold text-sm">2</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800">Monitor Results</h3>
+                            <p class="text-gray-600 text-sm">Check your Instagram DMs for responses and engagement</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start space-x-4">
+                        <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                            <span class="text-green-600 font-semibold text-sm">3</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800">Scale Success</h3>
+                            <p class="text-gray-600 text-sm">Analyze performance and optimize your messaging strategy</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="mt-8 space-y-3">
+                    <!-- Start Running Button (Form to trigger POST request) -->
+                    <form action="/runinstadm" method="POST" style="margin: 0;">
+                        <button type="submit" class="block w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 text-center">
+                            🚀 Start Running
+                        </button>
+                    </form>
+                    
+                    <a href="/instadm" class="block w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 text-center">
+                        Configure Another Campaign
+                    </a>
+                    <a href="/" class="block w-full bg-gray-100 text-gray-700 font-semibold py-3 px-4 rounded-lg hover:bg-gray-200 transition-all duration-200 text-center">
+                        Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Timeline -->
+        <div class="mt-12 bg-white rounded-2xl shadow-xl p-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Campaign Status</h2>
+            
+            <div class="relative">
+                <div class="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+                
+                <div class="relative flex items-center mb-6">
+                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center z-10">
+                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="font-semibold text-gray-800">Configuration Complete</p>
+                        <p class="text-sm text-gray-600">Just now</p>
+                    </div>
+                </div>
+                
+                <div class="relative flex items-center mb-6">
+                    <div class="w-8 h-8 {% if success_message %}bg-green-500{% elif error %}bg-red-500{% else %}bg-gray-300{% endif %} rounded-full flex items-center justify-center z-10">
+                        {% if success_message %}
+                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        {% elif error %}
+                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                        </svg>
+                        {% else %}
+                        <div class="w-3 h-3 bg-gray-500 rounded-full"></div>
+                        {% endif %}
+                    </div>
+                    <div class="ml-4">
+                        <p class="font-semibold {% if success_message %}text-gray-800{% elif error %}text-red-600{% else %}text-gray-500{% endif %}">
+                            {% if success_message %}Campaign Completed{% elif error %}Campaign Failed{% else %}Campaign Ready{% endif %}
+                        </p>
+                        <p class="text-sm {% if success_message or error %}text-gray-600{% else %}text-gray-400{% endif %}">
+                            {% if success_message or error %}Just completed{% else %}Waiting to start{% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Important Notice -->
+        <div class="mt-8 bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-r-lg">
+            <div class="flex items-start">
+                <svg class="h-6 w-6 text-yellow-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                <div class="ml-3">
+                    <h3 class="text-lg font-semibold text-yellow-800">Important Reminders</h3>
+                    <div class="mt-2 text-yellow-700">
+                        <ul class="list-disc list-inside space-y-1 text-sm">
+                            <li>Keep your Instagram app closed while automation is running</li>
+                            <li>Monitor your account for any unusual activity</li>
+                            <li>Respond promptly to any messages you receive</li>
+                            <li>Follow Instagram's community guidelines</li>
+                            <li>The system automatically avoids duplicate messages</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simulate status updates
+        setTimeout(() => {
+            const initStep = document.querySelector('.animate-pulse');
+            if (initStep) {
+                initStep.classList.remove('animate-pulse', 'bg-blue-500');
+                initStep.classList.add('bg-green-500');
+                initStep.innerHTML = '<svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>';
+                
+                const statusText = initStep.parentElement.querySelector('p');
+                statusText.textContent = 'Campaign Initialized';
+                statusText.nextElementSibling.textContent = 'Completed';
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Follower Messaging Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen">
+    <div class="container mx-auto px-4 py-12">
+        <div class="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">👥 Follower Messenger</h1>
+                <p class="text-gray-600">Send personalized messages to your followers</p>
+            </div>
+
+            <form action="/follower_config" method="POST" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Your Instagram Username</label>
+                    <input type="text" name="username" placeholder="your_username" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Your Instagram Password</label>
+                    <input type="password" name="password" placeholder="your_password" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Target Account (whose followers to message)</label>
+                    <input type="text" name="target_account" placeholder="@target_username" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="text-sm text-gray-500 mt-1">Enter the username whose followers you want to message</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Number of followers to message</label>
+                    <input type="number" name="dm_limit" placeholder="8" max="20" min="1" value="8" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="text-sm text-amber-600 mt-2 flex items-center">
+                        ⚠️ Warning: Sending to more than 8 followers may get your account flagged
+                    </p>
+                </div>
+
+                <!-- <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Delay between messages (seconds)</label>
+                    <input type="number" name="delay_seconds" placeholder="3" min="1" max="60" value="3" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="text-sm text-gray-500 mt-1">Recommended: 3-10 seconds to avoid spam detection</p>
+                </div> -->
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Message to send</label>
+                    <textarea name="message" placeholder="Hello! This is a test message." rows="4" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"></textarea>
+                    <p class="text-sm text-gray-500 mt-1">Keep it personal and engaging to avoid being marked as spam</p>
+                </div>
+
+                <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105">
+                    ⚙️ Configure Follower Campaign
+                </button>
+            </form>
+
+            <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 class="text-sm font-semibold text-blue-800 mb-2">💡 Pro Tips:</h3>
+                <ul class="text-sm text-blue-700 space-y-1">
+                    <li>• Use a personal, non-spammy message</li>
+                    <li>• Start with small numbers (5-8 messages)</li>
+                    <li>• Wait between campaigns to avoid detection</li>
+                    <li>• Monitor your account for any restrictions</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Results Section (Hidden by default) -->
+        <div id="results" class="max-w-md mx-auto mt-8 bg-white rounded-xl shadow-lg p-8 hidden">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">📊 Campaign Results</h2>
+            <div class="space-y-4">
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-green-700 font-medium">Messages Sent:</span>
+                        <span class="text-green-800 font-bold" id="messagesSent">0</span>
+                    </div>
+                </div>
+                
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-blue-700 font-medium">Already Messaged:</span>
+                        <span class="text-blue-800 font-bold" id="alreadyMessaged">0</span>
+                    </div>
+                </div>
+                
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-red-700 font-medium">Failed:</span>
+                        <span class="text-red-800 font-bold" id="failed">0</span>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div class="text-center">
+                        <span class="text-gray-700 font-medium">Status:</span>
+                        <p class="text-gray-800 font-bold mt-1" id="status">Ready to start</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-6 text-center">
+                <button onclick="startNewCampaign()" class="bg-gradient-to-r from-green-600 to-emerald-600 text-white py-2 px-6 rounded-lg font-medium hover:from-green-700 hover:to-emerald-700 transition-all duration-200">
+                    Start New Campaign
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function startNewCampaign() {
+            document.getElementById('results').classList.add('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Show results if there are URL parameters (after form submission)
+        window.addEventListener('load', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('success')) {
+                showResults(
+                    urlParams.get('sent') || 0,
+                    urlParams.get('already') || 0,
+                    urlParams.get('failed') || 0,
+                    urlParams.get('status') || 'Completed'
+                );
+            }
+        });
+
+        function showResults(sent, already, failed, status) {
+            document.getElementById('messagesSent').textContent = sent;
+            document.getElementById('alreadyMessaged').textContent = already;
+            document.getElementById('failed').textContent = failed;
+            document.getElementById('status').textContent = status;
+            document.getElementById('results').classList.remove('hidden');
+            
+            // Scroll to results
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Form validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const username = document.querySelector('input[name="username"]').value;
+            const password = document.querySelector('input[name="password"]').value;
+            const targetAccount = document.querySelector('input[name="target_account"]').value;
+            const message = document.querySelector('textarea[name="message"]').value;
+            const dmLimit = parseInt(document.querySelector('input[name="dm_limit"]').value);
+
+            if (!username || !password || !targetAccount || !message) {
+                alert('Please fill in all required fields!');
+                e.preventDefault();
+                return;
+            }
+
+            if (dmLimit > 20) {
+                if (!confirm('Sending to more than 20 followers is risky and may result in account restrictions. Continue anyway?')) {
+                    e.preventDefault();
+                    return;
+                }
+            }
+
+            // Show loading state
+            const button = document.querySelector('button[type="submit"]');
+            button.innerHTML = '⏳ Starting Campaign...';
+            button.disabled = true;
+        });
+    </script>
+</body>
+</html>

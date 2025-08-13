@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Follower Campaign Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-blue-100 min-h-screen p-4">
+    <div class="container mx-auto max-w-4xl">
+        <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">👥 Follower Campaign Dashboard</h1>
+                <p class="text-gray-600">Your follower messaging campaign is ready to launch</p>
+            </div>
+            
+            <!-- Configuration Status -->
+            <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 mb-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-green-800">Campaign Configured</h3>
+                        {% if username %}
+                            <p class="text-green-600">Account: {{ username }}</p>
+                        {% endif %}
+                        {% if target_account %}
+                            <p class="text-green-600">Target: @{{ target_account }}</p>
+                        {% endif %}
+                        {% if dm_limit %}
+                            <p class="text-green-600">Limit: {{ dm_limit }} messages</p>
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                        <span class="text-green-600 font-medium">Ready</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Campaign Details -->
+            <div class="grid md:grid-cols-2 gap-6 mb-8">
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl">
+                    <div class="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-blue-800 mb-2">Target Followers</h3>
+                    {% if target_account and dm_limit %}
+                        <p class="text-blue-600 text-sm">Will message up to {{ dm_limit }} followers of @{{ target_account }}</p>
+                    {% else %}
+                        <p class="text-blue-600 text-sm">Target followers from specified account</p>
+                    {% endif %}
+                </div>
+                
+                <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl">
+                    <div class="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-purple-800 mb-2">Smart Timing</h3>
+                    {% if delay_seconds %}
+                        <p class="text-purple-600 text-sm">{{ delay_seconds }} second delay between messages to avoid detection</p>
+                    {% else %}
+                        <p class="text-purple-600 text-sm">Optimized delays to prevent spam detection</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Message Preview -->
+            {% if message %}
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-8">
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">📝 Message Preview</h3>
+                <div class="bg-white p-3 rounded border-l-4 border-blue-500">
+                    <p class="text-gray-700 italic">"{{ message }}"</p>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Main Action Button -->
+            <div class="text-center">
+                <form action="/run_follower_tool" method="POST">
+                    {% if username %}
+                        <input type="hidden" name="username" value="{{ username }}">
+                    {% endif %}
+                    {% if password %}
+                        <input type="hidden" name="password" value="{{ password }}">
+                    {% endif %}
+                    {% if target_account %}
+                        <input type="hidden" name="target_account" value="{{ target_account }}">
+                    {% endif %}
+                    {% if dm_limit %}
+                        <input type="hidden" name="dm_limit" value="{{ dm_limit }}">
+                    {% endif %}
+                    {% if delay_seconds %}
+                        <input type="hidden" name="delay_seconds" value="{{ delay_seconds }}">
+                    {% endif %}
+                    {% if message %}
+                        <input type="hidden" name="message" value="{{ message }}">
+                    {% endif %}
+                    
+                    <button type="submit" class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-4 px-8 rounded-xl hover:from-indigo-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
+                        🚀 Launch Follower Campaign
+                    </button>
+                </form>
+                
+                <p class="text-gray-500 text-sm mt-4">Click to start messaging followers automatically</p>
+            </div>
+        </div>
+        
+        <!-- Status Messages -->
+        {% if success_message %}
+        <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <div class="flex items-center">
+                <svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <p class="text-green-700">{{ success_message }}</p>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if error %}
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div class="flex items-center">
+                <svg class="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                <p class="text-red-700">{{ error }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Results Section -->
+        {% if messages_sent is defined %}
+        <div class="bg-white rounded-2xl shadow-xl p-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">📊 Campaign Results</h2>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                    <div class="text-2xl font-bold text-green-800">{{ messages_sent }}</div>
+                    <div class="text-sm text-green-600">Messages Sent</div>
+                </div>
+                
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+                    <div class="text-2xl font-bold text-yellow-800">{{ already_messaged }}</div>
+                    <div class="text-sm text-yellow-600">Already Messaged</div>
+                </div>
+                
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                    <div class="text-2xl font-bold text-red-800">{{ failed_messages }}</div>
+                    <div class="text-sm text-red-600">Failed</div>
+                </div>
+                
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                    <div class="text-2xl font-bold text-blue-800">{{ dm_limit }}</div>
+                    <div class="text-sm text-blue-600">Target Limit</div>
+                </div>
+            </div>
+            
+            <div class="text-center">
+                <a href="/follower" class="bg-gradient-to-r from-green-600 to-emerald-600 text-white py-2 px-6 rounded-lg font-medium hover:from-green-700 hover:to-emerald-700 transition-all duration-200 mr-4">
+                    🔄 New Campaign
+                </a>
+                <a href="/" class="bg-gradient-to-r from-gray-600 to-gray-700 text-white py-2 px-6 rounded-lg font-medium hover:from-gray-700 hover:to-gray-800 transition-all duration-200">
+                    🏠 Home
+                </a>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Safety Tips -->
+        <div class="bg-white rounded-2xl shadow-xl p-8 mt-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">🛡️ Safety Guidelines</h2>
+            
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <h3 class="font-semibold mb-2 text-amber-800">⚠️ Stay Safe</h3>
+                    <ul class="text-sm text-amber-700 space-y-1">
+                        <li>• Keep message limits low (under 10)</li>
+                        <li>• Use natural, personal messages</li>
+                        <li>• Wait between campaigns</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h3 class="font-semibold mb-2 text-blue-800">✅ Best Practices</h3>
+                    <ul class="text-sm text-blue-700 space-y-1">
+                        <li>• Target relevant audiences</li>
+                        <li>• Monitor account health</li>
+                        <li>• Engage authentically</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Form submission handling
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const button = document.querySelector('button[type="submit"]');
+            button.innerHTML = '⏳ Launching Campaign...';
+            button.disabled = true;
+        });
+    </script>
+</body>
+</html>

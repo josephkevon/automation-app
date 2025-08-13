@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Automation Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-blue-100 min-h-screen p-4">
+    <div class="container mx-auto max-w-4xl">
+        <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">Sales Automation Dashboard</h1>
+                <p class="text-gray-600">Your AI-powered Instagram DM automation system</p>
+            </div>
+            
+            <!-- Profile Status -->
+            <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 mb-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-green-800">Profile Active</h3>
+                        {% if username %}
+                            <p class="text-green-600">Username: {{ username }}</p>
+                        {% endif %}
+                        {% if status %}
+                            <p class="text-green-600">{{ status }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                        <span class="text-green-600 font-medium">Connected</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Features Overview -->
+            <div class="grid md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl">
+                    <div class="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-blue-800 mb-2">Smart DM System</h3>
+                    <p class="text-blue-600 text-sm">AI handles conversations and books meetings automatically</p>
+                </div>
+                
+                <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl">
+                    <div class="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-purple-800 mb-2">Lead Generation</h3>
+                    <p class="text-purple-600 text-sm">Find ideal customers using keywords and competitor scraping</p>
+                </div>
+                
+                <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 p-6 rounded-xl">
+                    <div class="w-12 h-12 bg-emerald-500 rounded-lg flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-emerald-800 mb-2">Analytics</h3>
+                    <p class="text-emerald-600 text-sm">Track performance and optimize your campaigns</p>
+                </div>
+            </div>
+            
+            <!-- Main Action Buttons -->
+            <div class="text-center">
+                <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                    <form action="/sales_automation2" method="POST">
+                        {% if username %}
+                            <input type="hidden" name="username" value="{{ username }}">
+                        {% endif %}
+                        {% if password %}
+                            <input type="hidden" name="password" value="{{ password }}">
+                        {% endif %}
+                        
+                        <button type="submit" class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-4 px-8 rounded-xl hover:from-indigo-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
+                            🚀 Start Sales Automation Bot
+                        </button>
+                    </form>
+                    
+                    <form action="/stop_bot" method="POST">
+                        <button type="submit" class="bg-gradient-to-r from-red-500 to-red-600 text-white font-bold py-4 px-8 rounded-xl hover:from-red-600 hover:to-red-700 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
+                            🛑 Stop Bot
+                        </button>
+                    </form>
+                </div>
+                
+                <p class="text-gray-500 text-sm mt-4">Click to begin automated Instagram DM campaigns</p>
+                
+                <!-- Bot Status Indicator -->
+                <div id="botStatus" class="mt-6 p-3 rounded-lg bg-gray-100">
+                    <p class="text-sm text-gray-600">Bot Status: <span id="statusText" class="font-semibold">Checking...</span></p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Status Messages -->
+        {% if success_message %}
+        <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <div class="flex items-center">
+                <svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <p class="text-green-700">{{ success_message }}</p>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if error %}
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div class="flex items-center">
+                <svg class="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                <p class="text-red-700">{{ error }}</p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Additional Controls -->
+        <div class="bg-white rounded-2xl shadow-xl p-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Quick Actions</h2>
+            
+            <div class="grid md:grid-cols-2 gap-4">
+                <a href="/instadm" class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 text-center">
+                    <h3 class="font-semibold mb-1">Instagram DM Tool</h3>
+                    <p class="text-sm opacity-90">Send bulk DMs to targeted users</p>
+                </a>
+                
+                <a href="/follower" class="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 text-center">
+                    <h3 class="font-semibold mb-1">Follower Growth</h3>
+                    <p class="text-sm opacity-90">Grow your Instagram following</p>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check bot status periodically
+        function checkBotStatus() {
+            fetch('/bot_status')
+                .then(response => response.json())
+                .then(data => {
+                    const statusElement = document.getElementById('statusText');
+                    const statusContainer = document.getElementById('botStatus');
+                    
+                    if (data.running) {
+                        statusElement.textContent = 'Running 🟢';
+                        statusContainer.className = 'mt-6 p-3 rounded-lg bg-green-100 border border-green-200';
+                    } else {
+                        statusElement.textContent = 'Stopped 🔴';
+                        statusContainer.className = 'mt-6 p-3 rounded-lg bg-red-100 border border-red-200';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking bot status:', error);
+                    document.getElementById('statusText').textContent = 'Error checking status';
+                });
+        }
+        
+        // Check status immediately and then every 5 seconds
+        checkBotStatus();
+        setInterval(checkBotStatus, 5000);
+    </script>
+</body>
+</html>
