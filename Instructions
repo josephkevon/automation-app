@@ -1,0 +1,3 @@
+pip install instagrapi
+pip install openai
+pip install flask
