@@ -454,101 +454,171 @@ Reply only with the response, nothing else."""
         full_prompt = f"{SYSTEM_PROMPT}\n\nConversation history: {conversation_log}\n\nTheir message: {prompt}\n\nYour reply:"
 
         try:
-            completion = client.chat.completions.create(
-                model="gpt-5",
-                messages=[{"role": "user", "content": full_prompt}],
-                max_tokens=150
-            )
-            return completion.choices[0].message.content.strip()
+            # Try multiple model options in order of preference
+            models_to_try = [
+                "anthropic/claude-3-haiku",  # Usually available and affordable
+                "meta-llama/llama-3.1-8b-instruct",  # Free alternative
+                "google/gemma-2-9b-it",  # Another free option
+                "mistralai/mistral-7b-instruct",  # Fallback option
+            ]
+            
+            for model in models_to_try:
+                try:
+                    completion = client.chat.completions.create(
+                        model=model,
+                        messages=[{"role": "user", "content": full_prompt}],
+                        max_tokens=150,
+                        temperature=0.7
+                    )
+                    return completion.choices[0].message.content.strip()
+                except Exception as model_error:
+                    print(f"⚠️ Model {model} failed: {model_error}")
+                    continue
+            
+            # If all models fail, return fallback message
+            return "Thanks for your message! I'll get back to you soon with more details."
+            
         except Exception as e:
             error_msg = str(e).lower()
             if "402" in error_msg or "credits" in error_msg:
                 print("❌ OpenRouter credits exhausted! Please add credits at https://openrouter.ai/settings/credits")
                 return "Thanks for your message! I'll get back to you soon."
+            elif "403" in error_msg or "key" in error_msg:
+                print("❌ API key issue. Using fallback response.")
+                return "Thanks for reaching out! Let me get back to you with more details."
             else:
                 print(f"❌ Chat API error: {e}")
                 return "Thanks for reaching out! Let me get back to you with more details."
 
     def safe_get_username(cl, user_id, max_retries=3):
-        """Safely get username with fallback and retry logic"""
-        for attempt in range(max_retries):
-            try:
-                user_info = cl.user_info(user_id)
-                return user_info.username
-            except KeyError as e:
-                if 'data' in str(e):
-                    print(f"⚠️ Instagram GraphQL 'data' key error (attempt {attempt + 1})")
-                    if attempt < max_retries - 1:
-                        time.sleep(random.randint(10, 30))
-                        continue
-            except Exception as e:
-                print(f"⚠️ Error fetching user info (attempt {attempt + 1}): {e}")
-                if attempt < max_retries - 1:
-                    time.sleep(random.randint(5, 15))
-                    continue
+        """Safely get username with multiple fallback methods"""
+        # Try different methods to get username
+        methods = [
+            lambda: cl.user_info(user_id).username,
+            lambda: cl.user_short_gql(user_id).username,
+            lambda: f"user_{str(user_id)[-8:]}"  # Fallback with last 8 digits of ID
+        ]
         
-        return f"user_{user_id}"
+        for attempt in range(max_retries):
+            for method_idx, method in enumerate(methods):
+                try:
+                    return method()
+                except KeyError as e:
+                    if 'data' in str(e) and method_idx < len(methods) - 1:
+                        print(f"⚠️ Instagram GraphQL 'data' key error, trying fallback method...")
+                        continue
+                    elif method_idx == len(methods) - 1:
+                        return f"user_{str(user_id)[-8:]}"
+                except Exception as e:
+                    print(f"⚠️ Error fetching user info (method {method_idx+1}, attempt {attempt + 1}): {e}")
+                    if method_idx < len(methods) - 1:
+                        continue
+                    elif attempt < max_retries - 1:
+                        time.sleep(random.randint(5, 15))
+                        break
+        
+        return f"user_{str(user_id)[-8:]}"
 
     def safe_instagram_login():
         """Login with better error handling and session management"""
         cl = Client()
         SETTINGS_PATH = "insta_session.json"
 
-        cl.delay_range = [3, 6]
+        # Configure client settings for better stability
+        cl.delay_range = [3, 8]  # Increased delay range
+        cl.request_timeout = 30
+        
+        # Set user agent to look more natural
+        cl.set_user_agent("Instagram 276.0.0.27.98 Android (33/13; 420dpi; 1080x2340; samsung; SM-G991B; o1s; exynos2100; en_US; 458229237)")
 
         if os.path.exists(SETTINGS_PATH):
             try:
                 print("🔄 Loading saved session...")
                 cl.load_settings(SETTINGS_PATH)
-                cl.login(username, password)
+                # Test the session
+                cl.login(username, password, relogin=True)
                 print("✅ Session loaded successfully")
                 return cl
             except Exception as e:
                 print(f"⚠️ Failed to load session: {e}")
                 print("🔄 Logging in fresh...")
+                # Remove corrupted session file
+                try:
+                    os.remove(SETTINGS_PATH)
+                except:
+                    pass
 
         max_retries = 3
         for attempt in range(max_retries):
             try:
+                print(f"🔑 Login attempt {attempt + 1}...")
                 cl.login(username, password)
                 cl.dump_settings(SETTINGS_PATH)
                 print("✅ Fresh login successful")
                 return cl
             except Exception as e:
+                error_msg = str(e).lower()
                 print(f"❌ Login attempt {attempt + 1} failed: {e}")
-                if attempt < max_retries - 1:
-                    wait_time = (attempt + 1) * 30
+                
+                if "challenge" in error_msg:
+                    print("🔐 Challenge required. Please complete it manually and restart the bot.")
+                    raise e
+                elif "checkpoint" in error_msg:
+                    print("⚠️ Account checkpoint detected. Please verify your account manually.")
+                    raise e
+                elif attempt < max_retries - 1:
+                    wait_time = (attempt + 1) * 60  # Increased wait time
                     print(f"⏳ Waiting {wait_time} seconds before retry...")
                     time.sleep(wait_time)
                 else:
                     raise e
 
-    def get_threads_with_retry(cl, max_retries=3):
-        """Get threads with exponential backoff retry"""
+    def get_threads_with_retry(cl, max_retries=5):
+        """Get threads with exponential backoff retry and better error handling"""
         for attempt in range(max_retries):
             try:
-                threads = cl.direct_threads(amount=5)
-                return threads
+                # Try different amounts to avoid hitting limits
+                amounts_to_try = [3, 5, 10]
+                
+                for amount in amounts_to_try:
+                    try:
+                        threads = cl.direct_threads(amount=amount)
+                        if threads:  # If we got threads, return them
+                            return threads
+                    except Exception as amount_error:
+                        print(f"⚠️ Failed with amount {amount}: {amount_error}")
+                        continue
+                
+                # If all amounts failed, try once more with amount=1
+                return cl.direct_threads(amount=1)
+                
             except Exception as e:
                 error_msg = str(e).lower()
 
-                if "500" in error_msg or "server" in error_msg:
-                    wait_time = (2 ** attempt) * 10 + random.randint(5, 15)
+                if "500" in error_msg or "server" in error_msg or "internal" in error_msg:
+                    wait_time = min(300, (2 ** attempt) * 10 + random.randint(5, 15))
                     print(f"🔄 Instagram server error (attempt {attempt + 1}). Waiting {wait_time}s...")
-                    time.sleep(wait_time)
-                elif "rate limit" in error_msg or "429" in error_msg:
-                    wait_time = 300 + random.randint(60, 180)
-                    print(f"⏱️ Rate limited. Waiting {wait_time}s...")
+                elif "rate limit" in error_msg or "429" in error_msg or "spam" in error_msg:
+                    wait_time = min(600, 180 + (attempt * 120) + random.randint(60, 180))
+                    print(f"⏱️ Rate limited (attempt {attempt + 1}). Waiting {wait_time}s...")
+                elif "login" in error_msg or "unauthorized" in error_msg:
+                    print("🔐 Login session expired. Need to re-authenticate.")
+                    raise e
+                else:
+                    wait_time = min(180, 30 * (attempt + 1))
+                    print(f"❌ Unexpected error (attempt {attempt + 1}): {e}")
+                    print(f"⏳ Waiting {wait_time}s...")
+
+                if attempt < max_retries - 1:
                     time.sleep(wait_time)
                 else:
-                    print(f"❌ Unexpected error: {e}")
-                    time.sleep(60)
-
-                if attempt == max_retries - 1:
+                    print("❌ Max retries reached for getting threads")
                     raise e
 
+        return []  # Return empty list if everything fails
+
     def send_message_with_retry(cl, message, user_ids, max_retries=3):
-        """Send message with retry logic"""
+        """Send message with retry logic and better error handling"""
         for attempt in range(max_retries):
             try:
                 cl.direct_send(message, user_ids)
@@ -556,15 +626,22 @@ Reply only with the response, nothing else."""
             except Exception as e:
                 error_msg = str(e).lower()
 
-                if "500" in error_msg:
-                    wait_time = (attempt + 1) * 15
-                    print(f"🔄 Send failed (attempt {attempt + 1}). Waiting {wait_time}s...")
+                if "500" in error_msg or "server" in error_msg:
+                    wait_time = min(120, (attempt + 1) * 20)
+                    print(f"🔄 Send failed due to server error (attempt {attempt + 1}). Waiting {wait_time}s...")
+                elif "rate limit" in error_msg or "429" in error_msg:
+                    wait_time = min(300, 60 + (attempt * 60))
+                    print(f"⏱️ Send rate limited (attempt {attempt + 1}). Waiting {wait_time}s...")
+                elif "spam" in error_msg:
+                    print("⚠️ Message flagged as spam. Adjusting future messages...")
+                    wait_time = 180
+                else:
+                    wait_time = min(90, 30 * (attempt + 1))
+                    print(f"❌ Send error (attempt {attempt + 1}): {e}")
+
+                if attempt < max_retries - 1:
                     time.sleep(wait_time)
                 else:
-                    print(f"❌ Send error: {e}")
-                    time.sleep(30)
-
-                if attempt == max_retries - 1:
                     print("❌ Failed to send message after all retries")
                     return False
 
@@ -572,12 +649,13 @@ Reply only with the response, nothing else."""
         # Initialize Instagram client
         cl = safe_instagram_login()
 
-        # Store already replied message IDs
-        seen_messages = set()
+        # Store already replied message IDs with timestamp cleanup
+        seen_messages = {}  # Changed to dict to store timestamps
+        max_seen_messages = 1000  # Prevent memory issues
 
         # Adaptive polling intervals
-        base_interval = 180
-        max_interval = 600
+        base_interval = 200  # Slightly increased base interval
+        max_interval = 800   # Increased max interval
         current_interval = base_interval
         consecutive_errors = 0
 
@@ -587,6 +665,14 @@ Reply only with the response, nothing else."""
 
         while bot_running:
             try:
+                # Clean up old seen messages periodically
+                current_time = time.time()
+                if len(seen_messages) > max_seen_messages:
+                    # Remove messages older than 24 hours
+                    cutoff_time = current_time - (24 * 60 * 60)
+                    seen_messages = {k: v for k, v in seen_messages.items() if v > cutoff_time}
+                    print(f"🧹 Cleaned up old message history. Now tracking {len(seen_messages)} messages.")
+
                 # Get latest threads with retry
                 threads = get_threads_with_retry(cl)
 
@@ -610,10 +696,10 @@ Reply only with the response, nothing else."""
 
                     # Only reply to new messages
                     if msg_id not in seen_messages:
-                        seen_messages.add(msg_id)
+                        seen_messages[msg_id] = current_time
                         message_found = True
 
-                        # Use safe username fetching
+                        # Use safe username fetching with enhanced fallback
                         sender = safe_get_username(cl, message.user_id)
 
                         print(f"💬 {sender} said: {msg_text}")
@@ -621,7 +707,7 @@ Reply only with the response, nothing else."""
                         # Handle log files
                         log_filename = f"{sender}log.txt"
                         if not os.path.exists(log_filename):
-                            with open(log_filename, "w") as initial_msg:
+                            with open(log_filename, "w", encoding="utf-8") as initial_msg:
                                 initial_msg.write("""Hey, are you guys able to handle more clients? 
 
 we are doing a free 14-day service for businesses like yours.
@@ -630,44 +716,49 @@ are you open to that?
 """)
 
                         # Log the incoming message
-                        with open(log_filename, "a") as log_file:
+                        with open(log_filename, "a", encoding="utf-8") as log_file:
                             log_file.write(f"{sender}: {msg_text}\n")
 
-                        if sender == username:
+                        # Skip own messages (double check)
+                        if sender.lower() == username.lower():
                             print("Skipping own message.")
                             continue
 
-                        if msg_text == "exit":
+                        if msg_text.strip() == "exit":
+                            print("Exit command received, skipping...")
                             continue
 
                         # Read conversation log
                         try:
-                            with open(log_filename, "r") as log_file:
+                            with open(log_filename, "r", encoding="utf-8") as log_file:
                                 log_content = log_file.read()
                                 if len(log_content) > 800:
                                     log_content = "..." + log_content[-800:]
                         except FileNotFoundError:
                             log_content = ""
 
-                        # Generate reply
+                        # Generate reply with enhanced error handling
                         try:
                             reply = chat(msg_text, log_content)
-                            print("🤖 Bot:", reply)
+                            if reply and len(reply.strip()) > 0:
+                                print("🤖 Bot:", reply)
 
-                            # Send reply with retry
-                            if send_message_with_retry(cl, reply, [message.user_id]):
-                                # Log the reply only if sent successfully
-                                with open(log_filename, "a") as log_file:
-                                    log_file.write(f"Bot: {reply}\n")
-                                print("✅ Message sent successfully")
+                                # Send reply with retry
+                                if send_message_with_retry(cl, reply, [message.user_id]):
+                                    # Log the reply only if sent successfully
+                                    with open(log_filename, "a", encoding="utf-8") as log_file:
+                                        log_file.write(f"Bot: {reply}\n")
+                                    print("✅ Message sent successfully")
+                                else:
+                                    print("❌ Failed to send message")
                             else:
-                                print("❌ Failed to send message")
+                                print("⚠️ Generated reply was empty, skipping...")
 
                         except Exception as e:
                             print(f"❌ Error generating/sending reply: {e}")
 
-                        # Add delay between processing messages
-                        time.sleep(random.randint(10, 20))
+                        # Add delay between processing messages (increased for stability)
+                        time.sleep(random.randint(15, 30))
 
                 if message_found:
                     print(f"✅ Processed messages. Next check in {current_interval} seconds")
@@ -681,21 +772,27 @@ are you open to that?
                 consecutive_errors += 1
                 error_msg = str(e).lower()
 
-                if "500" in error_msg:
+                if "500" in error_msg or "server" in error_msg:
                     current_interval = min(max_interval, current_interval + 60)
-                    wait_time = current_interval + random.randint(30, 120)
+                    wait_time = current_interval + random.randint(60, 180)
                     print(f"🔴 Instagram server issues detected. Waiting {wait_time} seconds...")
                     print(f"📈 Increased polling interval to {current_interval} seconds")
-                elif "login" in error_msg or "challenge" in error_msg:
-                    print("🔐 Login issue detected. Attempting re-login...")
+                elif "login" in error_msg or "challenge" in error_msg or "checkpoint" in error_msg:
+                    print("🔐 Authentication issue detected. Attempting re-login...")
                     try:
                         cl = safe_instagram_login()
-                        wait_time = 60
+                        wait_time = 120
                     except Exception as login_error:
                         print(f"❌ Re-login failed: {login_error}")
-                        wait_time = 600
+                        wait_time = 900  # Wait 15 minutes on login failure
+                        print("⚠️ Consider manually logging into Instagram to resolve any challenges.")
+                elif "rate limit" in error_msg or "429" in error_msg:
+                    wait_time = min(600, 180 + (consecutive_errors * 120))
+                    current_interval = min(max_interval, current_interval + 120)
+                    print(f"⏱️ Rate limited. Waiting {wait_time} seconds...")
+                    print(f"📈 Increased polling interval to {current_interval} seconds")
                 else:
-                    wait_time = min(300, 30 * consecutive_errors)
+                    wait_time = min(300, 60 * consecutive_errors)
                     print(f"⚠️ Error (#{consecutive_errors}): {e}")
                     print(f"⏳ Waiting {wait_time} seconds before retry...")
 
@@ -703,6 +800,7 @@ are you open to that?
                 
     except Exception as e:
         print(f"❌ Bot crashed: {e}")
+        print("🔄 You may need to restart the bot or check your Instagram account status.")
         bot_running = False
 
 
