@@ -10,7 +10,7 @@ from instagrapi.exceptions import LoginRequired, PleaseWaitFewMinutes, RateLimit
 
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key="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",
+    api_key="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",
 )
 
 bot_running = False
@@ -20,6 +20,47 @@ bot_thread = None
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'  # Required for sessions
 cl = Client()
+
+
+def patch_instagrapi():
+    """
+    Monkey patch to fix instagrapi Pydantic validation errors
+    """
+    try:
+        from instagrapi.types import Media
+        from pydantic import validator
+        
+        # Create a more flexible validator for clips_metadata
+        def flexible_clips_metadata_validator(cls, v):
+            if v is None:
+                return {}
+            if isinstance(v, dict):
+                # Fix original_sound_info if it's None
+                if 'original_sound_info' in v and v['original_sound_info'] is None:
+                    v['original_sound_info'] = {}
+                
+                # Fix reusable_text_info if it's a list instead of dict
+                if 'reusable_text_info' in v and isinstance(v['reusable_text_info'], list):
+                    v['reusable_text_info'] = {'text_elements': v['reusable_text_info']}
+                
+                return v
+            return {}
+        
+        # Apply the patch if the Media class exists
+        if hasattr(Media, '__validators__'):
+            # Add our flexible validator
+            Media.__validators__['clips_metadata'] = flexible_clips_metadata_validator
+            print("✅ Successfully patched instagrapi validation")
+        
+    except ImportError:
+        print("⚠️ Could not import instagrapi types for patching")
+    except Exception as e:
+        print(f"⚠️ Failed to patch instagrapi: {e}")
+
+# Apply the patch when the module loads
+patch_instagrapi()
+
+# Rest of your existing code...
 
 @app.route("/")
 def home():
@@ -91,7 +132,7 @@ def run_follower_tool():
     PASSWORD = request.form.get("password") or session.get('follower_password')
     TARGET = request.form.get("target_account") or session.get('follower_target')
     DM_LIMIT = int(request.form.get("dm_limit", 0)) or session.get('follower_dm_limit', 8)
-    DELAY_SECONDS = random.randint(3, 10) if not request.form.get("delay_seconds") else int(request.form.get("delay_seconds"))
+    DELAY_SECONDS = random.randint(3, 10) #if not request.form.get("delay_seconds") else int(request.form.get("delay_seconds"))
     MESSAGE = request.form.get("message") or session.get('follower_message')
     
     # Remove @ symbol if present
@@ -308,12 +349,109 @@ def run_instadm():
                              error=error)
     
     try:
-        # Login to Instagram
-        cl.login(username, password)
-        print(f"Successfully logged in as {username}")
+        # Login to Instagram with better error handling
+        SETTINGS_FILE = f"{username}_settings.json"
         
-        # Fetch recent posts from the hashtag
-        medias = cl.hashtag_medias_recent(niche, amount=amount_of_dms)
+        # Initialize client
+        cl = Client()
+        
+        # Load previous session if available
+        if os.path.exists(SETTINGS_FILE):
+            try:
+                cl.load_settings(SETTINGS_FILE)
+                print("Previous session loaded")
+            except Exception as e:
+                print(f"Failed to load previous session: {e}")
+        
+        # Login with retry logic
+        try:
+            cl.login(username, password)
+            print(f"Successfully logged in as {username}")
+        except Exception as e:
+            print("Login failed, retrying with fresh settings:", e)
+            cl.set_settings({})
+            try:
+                cl.login(username, password)
+                print("Login successful with fresh settings")
+            except Exception as login_error:
+                error = f"Login failed: {str(login_error)}. Please check your username and password."
+                return render_template("resulte.html", 
+                                     username=username,
+                                     password=password,
+                                     niche=niche,
+                                     message_count=amount_of_dms,
+                                     message_content=message,
+                                     error=error)
+        
+        # Save session
+        cl.dump_settings(SETTINGS_FILE)
+        
+        # Try multiple approaches to fetch posts
+        medias = []
+        approaches = [
+            ("hashtag_medias_recent", lambda: cl.hashtag_medias_recent(niche, amount=amount_of_dms)),
+            ("hashtag_medias_top", lambda: cl.hashtag_medias_top(niche, amount=min(20, amount_of_dms))),
+            ("search_users", lambda: get_users_from_hashtag_search(cl, niche, amount_of_dms)),
+        ]
+        
+        for approach_name, approach_func in approaches:
+            try:
+                print(f"Trying approach: {approach_name}")
+                if approach_name == "search_users":
+                    # Alternative: Get users who post about the hashtag
+                    target_users = approach_func()
+                    if target_users:
+                        print(f"Found {len(target_users)} users from hashtag search")
+                        # Convert users to a format we can work with
+                        medias = []
+                        for user in target_users:
+                            # Create a mock media object with user info
+                            class MockMedia:
+                                def __init__(self, user):
+                                    self.user = user
+                            medias.append(MockMedia(user))
+                        break
+                else:
+                    medias = approach_func()
+                    if medias:
+                        print(f"Success with {approach_name}: {len(medias)} posts")
+                        break
+                        
+            except Exception as e:
+                error_str = str(e)
+                print(f"{approach_name} failed: {error_str}")
+                
+                # If it's the validation error, try a workaround
+                if "validation errors for Media" in error_str or "clips_metadata" in error_str:
+                    print("Validation error detected, trying user search instead...")
+                    continue
+        
+        # If all approaches failed, try the follower-based approach
+        if not medias:
+            try:
+                print("All hashtag approaches failed. Trying to find users who engage with the hashtag...")
+                # Search for recent posts and get commenters/likers instead
+                medias = get_hashtag_engagers(cl, niche, amount_of_dms)
+            except Exception as final_error:
+                print(f"Final fallback also failed: {final_error}")
+                error = f"Unable to find users for #{niche}. The hashtag might be restricted or Instagram's API has changed. Try using the 'Follower Tool' instead, or try a different hashtag like #style #ootd #clothing"
+                return render_template("resulte.html", 
+                                     username=username,
+                                     password=password,
+                                     niche=niche,
+                                     message_count=amount_of_dms,
+                                     message_content=message,
+                                     error=error)
+        
+        if not medias:
+            error = f"No posts found for hashtag #{niche}. Try a different hashtag."
+            return render_template("resulte.html", 
+                                 username=username,
+                                 password=password,
+                                 niche=niche,
+                                 message_count=amount_of_dms,
+                                 message_content=message,
+                                 error=error)
         
         messages_sent = 0
         already_messaged = 0
@@ -328,7 +466,12 @@ def run_instadm():
                 except FileNotFoundError:
                     usernames = []
                 
-                account = media.user.username
+                # Safe access to user data
+                try:
+                    account = media.user.username
+                except AttributeError:
+                    print("Warning: Media object missing user data, skipping...")
+                    continue
                 
                 # Check if the account has already been messaged
                 if account in usernames:
@@ -349,7 +492,7 @@ def run_instadm():
                         file.write(account + '\n')
                     
                     # Add delay between messages to avoid being blocked
-                    time.sleep(2)  # 2-second delay
+                    time.sleep(random.randint(3, 7))  # Random delay
                     
                 except Exception as e:
                     print(f"Failed to send message to {account}: {e}")
@@ -358,13 +501,14 @@ def run_instadm():
                     
             except Exception as e:
                 print(f"Error processing media: {e}")
+                failed_messages += 1
                 continue
         
         success_message = f"Campaign completed! Messages sent: {messages_sent}, Already messaged: {already_messaged}, Failed: {failed_messages}"
         print(success_message)
         
     except Exception as e:
-        error = f"Login failed: {str(e)}. Please check your username and password."
+        error = f"Campaign failed: {str(e)}"
         print(error)
     
     # Return to results page with status
@@ -375,8 +519,10 @@ def run_instadm():
                          message_count=amount_of_dms,
                          message_content=message,
                          success_message=success_message,
-                         error=error)
-
+                         error=error,
+                         messages_sent=messages_sent if 'messages_sent' in locals() else 0,
+                         already_messaged=already_messaged if 'already_messaged' in locals() else 0,
+                         failed_messages=failed_messages if 'failed_messages' in locals() else 0)
 # Optional: API endpoint to get configuration status
 @app.route("/api/status")
 def get_status():
